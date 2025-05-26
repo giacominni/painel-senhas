@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Senha Atual - Vitória Moss Delicatessen</title>
+    <title>Acompanhamento de Senha - Vitória Moss Delicatessen</title>
     <style>
         body {
             background-color: #f4ccd2;
@@ -13,7 +13,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start; /* Alinha ao topo para dar espaço ao histórico */
             min-height: 100vh;
             color: #333;
             text-align: center;
@@ -49,6 +49,7 @@
             max-width: 90%;
             width: 400px;
             text-align: center;
+            margin-bottom: 20px; /* Espaço antes do histórico */
         }
 
         h1 {
@@ -75,8 +76,8 @@
             color: #000;
         }
 
-        #senhaAtualDisplay { /* Novo ID para o display principal da senha */
-            font-size: 3.5rem; /* Fonte maior para o display principal */
+        #senhaAtualDisplay {
+            font-size: 3.5rem;
             color: #d94f6d;
             font-weight: bolder;
             margin-top: 20px;
@@ -98,9 +99,54 @@
             animation: fadeIn 0.5s ease-out;
         }
 
-        .erro-message { /* Renomeado para clareza */
+        .erro-message {
             color: red;
             font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* ESTILOS PARA O HISTÓRICO DE CHAMADAS */
+        .historico-container {
+            background: #f9d6dd;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            width: 400px;
+            margin-top: 10px; /* Espaço para o container principal */
+        }
+
+        .historico-container h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            user-select: none;
+            color: #d94f6d;
+        }
+
+        .colunas {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .coluna {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .coluna button { /* Estilo para cada item do histórico */
+            font-size: 1.2rem;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            background-color: #ffffff; /* Fundo branco para os botões do histórico */
+            color: #333;
+            cursor: default; /* Não é clicável */
+            user-select: none;
+            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
             font-weight: bold;
         }
     </style>
@@ -120,8 +166,16 @@
         </div>
 
         <p class="mensagem-extra">
-            Esta página exibe a senha mais recente chamada no painel principal.
+            Mantenha esta página aberta. O celular vibrará ao chamar nova senha.
         </p>
+    </div>
+
+    <div class="historico-container">
+        <h2>Últimas Chamadas</h2>
+        <div class="colunas">
+            <div id="coluna1" class="coluna"></div>
+            <div id="coluna2" class="coluna"></div>
+        </div>
     </div>
 
     <script type="module">
@@ -142,16 +196,30 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // REFERÊNCIA À SENHA ATUAL DO PAINEL PRINCIPAL (AQUI ESTÁ A MUDANÇA)
+        // Referência à senha atual do painel principal
         const senhaAtualRef = ref(db, 'painel/senha');
         const senhaAtualDisplayElement = document.getElementById('senhaAtualDisplay');
+        let ultimaSenhaChamada = null; // Para controlar a vibração
 
-        // Escutando mudanças na senha atual do painel em tempo real
+        // Referência ao histórico de senhas
+        const historicoRef = ref(db, 'painel/historico');
+        const coluna1 = document.getElementById("coluna1");
+        const coluna2 = document.getElementById("coluna2");
+
+        // 1. Escutando mudanças na senha atual para exibir e vibrar
         onValue(senhaAtualRef, (snapshot) => {
             const senha = snapshot.val();
             if (senha) {
+                // Vibração
+                if (ultimaSenhaChamada !== null && ultimaSenhaChamada !== senha) {
+                    if (navigator.vibrate) { // Verifica se a API de vibração é suportada
+                        navigator.vibrate([200]); // Vibra por 200ms
+                    }
+                }
+                ultimaSenhaChamada = senha; // Atualiza a última senha chamada
+
                 senhaAtualDisplayElement.innerText = senha;
-                senhaAtualDisplayElement.classList.remove('erro-message'); // Remove erro se houver
+                senhaAtualDisplayElement.classList.remove('erro-message');
             } else {
                 senhaAtualDisplayElement.innerText = "N/A";
                 senhaAtualDisplayElement.classList.add('erro-message');
@@ -161,6 +229,26 @@
             console.error("Erro ao ler senha atual do Firebase:", error);
             senhaAtualDisplayElement.innerText = "Erro ao carregar senha.";
             senhaAtualDisplayElement.classList.add('erro-message');
+        });
+
+        // 2. Escutando mudanças no histórico para exibir as últimas chamadas
+        onValue(historicoRef, (snapshot) => {
+            const lista = snapshot.val() || [];
+            
+            coluna1.innerHTML = ''; // Limpa as colunas antes de preencher
+            coluna2.innerHTML = '';
+
+            // Exibe as últimas 3 senhas (do índice 1 em diante, pois a 0 é a atual)
+            // Limitando a um máximo de 6 no geral, e distribuindo em 2 colunas.
+            lista.slice(1, 7).forEach((senha, i) => { // Pega do segundo item (índice 1) até o 7º item
+                const btn = document.createElement("button");
+                btn.textContent = senha;
+                if (i < 3) { // As primeiras 3 senhas (após a atual) na coluna 1
+                    coluna1.appendChild(btn);
+                } else { // As próximas 3 na coluna 2
+                    coluna2.appendChild(btn);
+                }
+            });
         });
     </script>
 </body>
