@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chamar Nome ou Senha</title>
+    <style>
+        body {
+            background-color: #f4ccd2;
+            font-family: Arial, Helvetica, sans-serif;
+            text-align: center;
+            font-size: 30px;
+            padding: 20px;
+        }
+
+        input#entrada {
+            font-size: 30px;
+            width: 90%;
+            max-width: 500px;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #aaa;
+            margin-bottom: 20px;
+        }
+
+        button {
+            font-size: 30px;
+            padding: 15px 40px;
+            border-radius: 10px;
+            border: none;
+            background-color: #d94f6d;
+            color: white;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #b63c55;
+        }
+
+        .teclado {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .linha {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: nowrap;
+        }
+
+        .teclado button {
+            font-size: 24px;
+            padding: 20px 30px;
+            border-radius: 10px;
+            border: none;
+            background-color: #ffffff;
+            color: #333;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            min-width: 60px;
+            flex-shrink: 0;
+        }
+
+        .teclado button:hover {
+            background-color: #ddd;
+        }
+
+        /* Responsivo para celulares */
+        @media (max-width: 480px) {
+            body {
+                font-size: 24px;
+            }
+
+            input#entrada {
+                font-size: 24px;
+                padding: 12px;
+            }
+
+            button {
+                font-size: 24px;
+                padding: 12px 24px;
+            }
+
+            .linha {
+                flex-wrap: wrap;
+            }
+
+            .teclado button {
+                font-size: 20px;
+                padding: 15px 20px;
+                min-width: 50px;
+            }
+        }
+    </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAPhzF9NHdTioVgR5JfesH51xRjSsfnBlI",
+            authDomain: "sistema-senhas-dabe7.firebaseapp.com",
+            databaseURL: "https://sistema-senhas-dabe7-default-rtdb.firebaseio.com",
+            projectId: "sistema-senhas-dabe7",
+            storageBucket: "sistema-senhas-dabe7.firebasestorage.app",
+            messagingSenderId: "559787868520",
+            appId: "1:559787868520:web:73191afd87078a4c4556dd"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Função para simular a criação de um pedido (para testes)
+        // Em um cenário real, isso viria do seu sistema de pedidos/PDV
+        async function criarPedidoTeste(senha) {
+            const pedidoRef = ref(db, `pedidos_retirada/${senha}`);
+            const snapshot = await get(pedidoRef);
+            if (!snapshot.exists()) {
+                await set(pedidoRef, {
+                    status: "em_preparacao", // Status inicial quando o pedido é feito
+                    timestamp_criacao: new Date().toISOString(),
+                    // Outros dados do pedido podem vir aqui
+                });
+                console.log(`Pedido ${senha} criado com status 'em_preparacao'.`);
+            } else {
+                console.log(`Pedido ${senha} já existe.`);
+            }
+        }
+
+        window.chamar = async function () { // Adicionado 'async' aqui
+            const input = document.getElementById("entrada");
+            const valor = input.value.trim();
+            if (valor) {
+                // 1. Atualiza a senha no painel principal (como você já faz)
+                await set(ref(db, 'painel/senha'), valor); // Adicionado 'await'
+
+                // 2. Atualiza o status do pedido para 'aguardando_chamada'
+                // Supondo que a 'entrada' é a senha do pedido (ex: P001)
+                const pedidoStatusRef = ref(db, `pedidos_retirada/${valor}/status`);
+                await set(pedidoStatusRef, 'aguardando_chamada'); // Adicionado 'await'
+
+                // Opcional: Você pode adicionar um timestamp da chamada
+                const pedidoChamadaTimestampRef = ref(db, `pedidos_retirada/${valor}/timestamp_chamada`);
+                await set(pedidoChamadaTimestampRef, new Date().toISOString());
+
+                alert("Chamado: " + valor);
+                input.value = '';
+            } else {
+                alert("Digite um nome ou número válido.");
+            }
+        }
+
+        window.addChar = function (char) {
+            const input = document.getElementById("entrada");
+            input.value += char;
+        }
+
+        window.delChar = function () {
+            const input = document.getElementById("entrada");
+            input.value = input.value.slice(0, -1);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById("entrada");
+            input.addEventListener("keypress", function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    chamar();
+                }
+            });
+            // Adicionei uma simulação para criar alguns pedidos de teste ao carregar a página
+            // Isso DEVE ser removido em produção, pois a criação do pedido deve vir de outro sistema.
+            // criarPedidoTeste("P001");
+            // criarPedidoTeste("P002");
+            // criarPedidoTeste("P003");
+        });
+    </script>
+</head>
+<body>
+    <h1>Chamar Nome ou Senha</h1>
+    <input type="text" id="entrada" placeholder="Digite nome ou número" />
+    <br>
+    <button onclick="chamar()">Chamar</button>
+
+    <div class="teclado">
+        <div class="linha">
+            <button type="button" onclick="addChar('1')">1</button>
+            <button type="button" onclick="addChar('2')">2</button>
+            <button type="button" onclick="addChar('3')">3</button>
+            <button type="button" onclick="addChar('4')">4</button>
+            <button type="button" onclick="delChar()">DEL</button>
+        </div>
+        <div class="linha">
+            <button type="button" onclick="addChar('5')">5</button>
+            <button type="button" onclick="addChar('6')">6</button>
+            <button type="button" onclick="addChar('7')">7</button>
+            <button type="button" onclick="addChar('8')">8</button>
+            <button type="button" onclick="addChar('9')">9</button>
+        </div>
+    </div>
+</body>
+</html>

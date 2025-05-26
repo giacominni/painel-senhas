@@ -1,0 +1,286 @@
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel</title>
+    <style>
+        body {
+    background-color: #f4ccd2;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center; /* <-- Centraliza horizontalmente */
+    align-items: center;      /* <-- Centraliza verticalmente */
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    }
+
+        .logo-loja-container {
+        position: fixed;
+        top: 15px;
+        left: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        user-select: none;
+        }
+
+        .logo-loja-container img {
+        height: 40px;
+        width: auto;
+        opacity: 0.7;
+        }
+
+        .nome-loja {
+        font-size: 1.3rem;
+        color: #333;
+        font-weight: normal;
+        opacity: 0.7;
+        }
+
+        .painel-principal {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4vmin;
+        text-align: center;
+        }
+
+        .label {
+        font-size: 15vmin;
+        font-weight: bold;
+        color: black;
+        width: 100%;
+        }
+
+        .senha {
+    font-size: clamp(10vmin, 20vmin, 30vmin);
+    font-weight: bold;
+    color: black;
+    max-width: 13ch; /* Máximo de 13 caracteres por linha */
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    line-height: 1.1;
+    text-align: center;
+    }
+
+
+        .historico-container {
+        position: fixed;
+        top: 20vmin;
+        right: 15px;
+        width: 18vw;
+        max-width: 18vw;
+        background: #f9d6dd;
+        padding: 1.5vmin;
+        border-radius: 2vmin;
+        box-shadow: 0 0 1.5vmin rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        }
+
+        .historico-container h2 {
+        font-size: 2.5vmin;
+        margin-bottom: 1.5vmin;
+        user-select: none;
+        }
+
+        .colunas {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        }
+
+        .coluna {
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        }
+
+        .coluna button {
+        font-size: 2.5vmin;
+        padding: 1.5vmin;
+        border-radius: 0.8vmin;
+        border: none;
+        background-color: #d94f6d;
+        color: white;
+        cursor: default;
+        user-select: none;
+        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .coluna button:hover {
+        background-color: #b63c55;
+        }
+
+        .divisoria-vertical {
+        position: fixed;
+        top: 5vmin;
+        bottom: 5vmin;
+        right: 22vw;
+        width: 0.4vmin;
+        background-color: #b63c55;
+        opacity: 0.5;
+        border-radius: 1px;
+        }
+
+        @media (max-width: 768px) {
+        body {
+            flex-direction: column;
+            padding: 10px;
+            height: auto;
+        }
+
+        .painel-principal {
+            padding-right: 0;
+        }
+
+        .historico-container {
+            position: relative;
+            top: auto;
+            right: auto;
+            width: 100%;
+            max-width: 100%;
+            margin-top: 20px;
+            box-shadow: none;
+            background: transparent;
+            padding: 0;
+            flex-direction: row;
+            justify-content: space-around;
+        }
+
+        .historico-container h2 {
+            display: none;
+        }
+
+        .colunas {
+            gap: 10px;
+            width: auto;
+        }
+
+        .coluna {
+            font-size: 18px;
+            width: 45%;
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .coluna button {
+            font-size: 18px;
+            padding: 8px 0;
+        }
+
+        .divisoria-vertical {
+            display: none;
+        }
+
+        .senha {
+            font-size: 80px;
+            margin-top: 30px;
+        }
+
+        .logo-loja-container {
+            position: relative;
+            top: 0;
+            left: 0;
+            margin-bottom: 15px;
+        }
+        }
+    </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import {
+        getDatabase,
+        ref,
+        onValue,
+        set,
+        get
+        } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+        const firebaseConfig = {
+        apiKey: "AIzaSyAPhzF9NHdTioVgR5JfesH51xRjSsfnBlI",
+        authDomain: "sistema-senhas-dabe7.firebaseapp.com",
+        databaseURL: "https://sistema-senhas-dabe7-default-rtdb.firebaseio.com",
+        projectId: "sistema-senhas-dabe7",
+        storageBucket: "sistema-senhas-dabe7.appspot.com",
+        messagingSenderId: "559787868520",
+        appId: "1:559787868520:web:73191afd87078a4c4556dd"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const senhaRef = ref(db, 'painel/senha');
+        const historicoRef = ref(db, 'painel/historico');
+
+        onValue(senhaRef, async (snapshot) => {
+        const valor = snapshot.val() || "001";
+        document.getElementById("painelSenha").innerText = valor;
+
+        const historicoSnap = await get(historicoRef);
+        let lista = historicoSnap.exists() ? historicoSnap.val() : [];
+        if (!Array.isArray(lista)) lista = [];
+
+        if (lista[0] !== valor) {
+            lista.unshift(valor);
+            if (lista.length > 6) lista = lista.slice(0, 6);
+            set(historicoRef, lista);
+        }
+        });
+
+        onValue(historicoRef, (snapshot) => {
+        const lista = snapshot.val() || [];
+
+        const col1 = document.getElementById("coluna1");
+        const col2 = document.getElementById("coluna2");
+        col1.innerHTML = '';
+        col2.innerHTML = '';
+
+        lista.forEach((senha, i) => {
+            const btn = document.createElement("button");
+            btn.textContent = senha;
+            if (i < 3) {
+            col1.appendChild(btn);
+            } else {
+            col2.appendChild(btn);
+            }
+        });
+        });
+    </script>
+    </head>
+    <body>
+    <div class="logo-loja-container">
+        <img src="103.png" alt="Logo da Loja" />
+        <div class="nome-loja">Vitória Moss Delicatessen</div>
+    </div>
+
+    <div class="painel-principal">
+        <div class="label">Senha:</div>
+        <div class="senha" id="painelSenha">001</div>
+    </div>
+
+    <div class="divisoria-vertical"></div>
+
+    <div class="historico-container">
+        <h2>Últimas Chamadas</h2>
+        <div class="colunas">
+        <div id="coluna1" class="coluna"></div>
+        <div id="coluna2" class="coluna"></div>
+        </div>
+    </div>
+    </body>
+    </html>
