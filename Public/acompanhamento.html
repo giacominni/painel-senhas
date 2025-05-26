@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de QR Code para Pedido</title>
+    <title>Gerador de QR Code do Painel</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.js/1.0.0/qrcode.min.js"></script>
     <style>
         body {
@@ -39,41 +39,65 @@
     </style>
 </head>
 <body>
-    <h1>Seu QR Code de Acompanhamento</h1>
-    <p>Escaneie este QR Code para acompanhar o status do seu pedido.</p>
+    <h1>QR Code da Senha Atual</h1>
+    <p>Escaneie este QR Code para acompanhar o status da senha atualmente sendo chamada.</p>
     
     <div id="qrcode"></div>
 
-    <p>Sua senha/ID do pedido: <strong id="senhaExibida"></strong></p>
+    <p>Senha Atual: <strong id="senhaExibida">Carregando...</strong></p>
 
-    <script>
-        function getUrlParameter(name) {
-            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
-            var results = regex.exec(location.search);
-            return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+        // Configuração do Firebase (a mesma do seu painel e acompanhamento)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAPhzF9NHdTioVgR5JfesH51xRjSsfnBlI",
+            authDomain: "sistema-senhas-dabe7.firebaseapp.com",
+            databaseURL: "https://sistema-senhas-dabe7-default-rtdb.firebaseio.com",
+            projectId: "sistema-senhas-dabe7",
+            storageBucket: "sistema-senhas-dabe7.appspot.com",
+            messagingSenderId: "559787868520",
+            appId: "1:559787868520:web:73191afd87078a4c4556dd"
         };
 
-        const senhaDoPedido = getUrlParameter('senha'); 
-        
-        if (!senhaDoPedido) {
-            alert("Erro: Senha do pedido não encontrada na URL. Por favor, utilize o link fornecido.");
-            document.body.innerHTML = "<h1>Erro: Senha do pedido não encontrada.</h1><p>Verifique o link ou o QR Code.</p>";
-        } else {
-            document.getElementById('senhaExibida').innerText = senhaDoPedido;
-            
-            // AQUI ESTÁ A CORREÇÃO DA URL:
-            const urlAcompanhamento = `https://painel-senhas-6vy1-aadn5u7ka-giacominnis-projects.vercel.app/acompanhamento.html?senha=${senhaDoPedido}`;
-            
-            const qrcode = new QRCode(document.getElementById("qrcode"), {
-                text: urlAcompanhamento,
-                width: 256,
-                height: 256,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
-        }
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const senhaRef = ref(db, 'painel/senha'); // Referência à senha atual do painel
+
+        // Escutando mudanças na senha atual do painel em tempo real
+        onValue(senhaRef, (snapshot) => {
+            const senhaAtual = snapshot.val();
+            if (senhaAtual) {
+                document.getElementById("senhaExibida").innerText = senhaAtual;
+
+                // Sua URL Vercel para a página de acompanhamento
+                // ESTA É A URL DO SEU PROJETO REAL NA VERCEL:
+                const baseUrlVercel = `https://painel-senhas-6vy1-aadn5u7ka-giacominnis-projects.vercel.app`;
+                
+                // O QR Code agora aponta para a página de acompanhamento com a senha atual
+                const urlAcompanhamento = `${baseUrlVercel}/acompanhamento.html?senha=${senhaAtual}`;
+                
+                // Limpa o QR Code anterior e gera um novo
+                document.getElementById("qrcode").innerHTML = ""; // Limpa o conteúdo
+                new QRCode(document.getElementById("qrcode"), {
+                    text: urlAcompanhamento,
+                    width: 256,
+                    height: 256,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            } else {
+                document.getElementById("senhaExibida").innerText = "N/A";
+                document.getElementById("qrcode").innerHTML = "<p>Nenhuma senha ativa para gerar QR Code.</p>";
+            }
+        }, (error) => {
+            console.error("Erro ao ler senha do Firebase:", error);
+            document.getElementById("senhaExibida").innerText = "Erro ao carregar senha.";
+            document.getElementById("qrcode").innerHTML = "<p>Erro ao carregar QR Code.</p>";
+        });
     </script>
 </body>
 </html>
