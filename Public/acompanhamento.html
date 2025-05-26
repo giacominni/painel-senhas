@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acompanhamento de Pedido - Vitória Moss Delicatessen</title>
+    <title>Senha Atual - Vitória Moss Delicatessen</title>
     <style>
         body {
             background-color: #f4ccd2;
@@ -75,11 +75,12 @@
             color: #000;
         }
 
-        #statusPedido {
-            font-size: 2.2rem;
+        #senhaAtualDisplay { /* Novo ID para o display principal da senha */
+            font-size: 3.5rem; /* Fonte maior para o display principal */
             color: #d94f6d;
             font-weight: bolder;
             margin-top: 20px;
+            line-height: 1.1;
         }
 
         .mensagem-extra {
@@ -93,11 +94,11 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        #statusPedido {
+        #senhaAtualDisplay {
             animation: fadeIn 0.5s ease-out;
         }
 
-        .erro-senha {
+        .erro-message { /* Renomeado para clareza */
             color: red;
             font-size: 1.2rem;
             font-weight: bold;
@@ -111,21 +112,15 @@
     </div>
 
     <div class="conteudo-principal">
-        <h1>Acompanhamento do Seu Pedido</h1>
+        <h1>Senha Atualmente Chamada</h1>
 
         <div class="info-item">
-            <span class="info-label">Sua Senha/ID do Pedido:</span>
-            <span class="info-value" id="senhaExibida">Carregando...</span>
-        </div>
-
-        <div class="info-item">
-            <span class="info-label">Status Atual:</span>
-            <span class="info-value" id="statusPedido">Buscando status...</span>
+            <span class="info-label">Senha:</span>
+            <span class="info-value" id="senhaAtualDisplay">Carregando...</span>
         </div>
 
         <p class="mensagem-extra">
-            Mantenha esta página aberta para atualizações em tempo real.
-            Aguarde a chamada no painel principal da loja.
+            Esta página exibe a senha mais recente chamada no painel principal.
         </p>
     </div>
 
@@ -147,63 +142,26 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Função para obter parâmetros da URL
-        function getUrlParameter(name) {
-            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
-            var results = regex.exec(location.search);
-            return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-        };
+        // REFERÊNCIA À SENHA ATUAL DO PAINEL PRINCIPAL (AQUI ESTÁ A MUDANÇA)
+        const senhaAtualRef = ref(db, 'painel/senha');
+        const senhaAtualDisplayElement = document.getElementById('senhaAtualDisplay');
 
-        // Obtenha a senha do pedido da URL
-        const senhaParam = getUrlParameter('senha');
-        const senhaExibidaElement = document.getElementById('senhaExibida');
-        const statusPedidoElement = document.getElementById('statusPedido');
-
-        if (!senhaParam) {
-            senhaExibidaElement.innerText = "N/A";
-            statusPedidoElement.innerText = "Erro: Senha não encontrada na URL.";
-            statusPedidoElement.classList.add('erro-senha');
-            console.error("Senha do pedido não encontrada na URL.");
-        } else {
-            senhaExibidaElement.innerText = senhaParam;
-
-            // REFERÊNCIA AO STATUS DO PEDIDO ESPECÍFICO NO FIREBASE
-            // Esta linha GARANTE que ele busca APENAS o status da senha que veio na URL
-            const pedidoRef = ref(db, `pedidos_retirada/${senhaParam}/status`);
-
-            // Escutando mudanças no status DESSE PEDIDO ESPECÍFICO em tempo real
-            onValue(pedidoRef, (snapshot) => {
-                const status = snapshot.val();
-                if (status) {
-                    let statusAmigavel = "Desconhecido";
-                    switch (status) {
-                        case "em_preparacao":
-                            statusAmigavel = "Em Preparação ⏳";
-                            break;
-                        case "pronto_para_retirada":
-                            statusAmigavel = "Pronto para Retirada! ✅";
-                            break;
-                        case "aguardando_chamada":
-                            statusAmigavel = "Aguardando Chamada no Painel ➡️";
-                            break;
-                        case "atendido":
-                            statusAmigavel = "Pedido Retirado! 👋";
-                            break;
-                        default:
-                            statusAmigavel = status;
-                    }
-                    statusPedidoElement.innerText = statusAmigavel;
-                } else {
-                    statusPedidoElement.innerText = "Pedido não encontrado ou status indefinido.";
-                    statusPedidoElement.classList.add('erro-senha');
-                }
-            }, (error) => {
-                console.error("Erro ao ler status do Firebase:", error);
-                statusPedidoElement.innerText = "Erro ao carregar status.";
-                statusPedidoElement.classList.add('erro-senha');
-            });
-        }
+        // Escutando mudanças na senha atual do painel em tempo real
+        onValue(senhaAtualRef, (snapshot) => {
+            const senha = snapshot.val();
+            if (senha) {
+                senhaAtualDisplayElement.innerText = senha;
+                senhaAtualDisplayElement.classList.remove('erro-message'); // Remove erro se houver
+            } else {
+                senhaAtualDisplayElement.innerText = "N/A";
+                senhaAtualDisplayElement.classList.add('erro-message');
+                console.warn("Nenhuma senha atual encontrada no Firebase.");
+            }
+        }, (error) => {
+            console.error("Erro ao ler senha atual do Firebase:", error);
+            senhaAtualDisplayElement.innerText = "Erro ao carregar senha.";
+            senhaAtualDisplayElement.classList.add('erro-message');
+        });
     </script>
 </body>
 </html>
