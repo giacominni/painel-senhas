@@ -3,153 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acompanhamento de Pedido - Vitória Moss Delicatessen</title>
+    <title>Gerador de QR Code para Pedido</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.js/1.0.0/qrcode.min.js"></script>
     <style>
         body {
-            background-color: #f4ccd2;
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            color: #333;
-            text-align: center;
-            box-sizing: border-box; /* Garante que padding e border não aumentem o tamanho total */
+            background-color: #f4ccd2;
+            margin: 0;
+            padding: 20px;
         }
-
-        .logo-loja-container {
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            user-select: none;
-        }
-
-        .logo-loja-container img {
-            height: 50px; /* Um pouco maior para se destacar */
-            width: auto;
-            opacity: 0.8;
-        }
-
-        .nome-loja {
-            font-size: 1.6rem; /* Ajustado para melhor visualização em celular */
-            color: #333;
-            font-weight: bold; /* Deixei mais forte */
-            opacity: 0.8;
-        }
-
-        .conteudo-principal {
-            background: #fff;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            max-width: 90%;
-            width: 400px; /* Largura máxima para celulares */
-            text-align: center;
-        }
-
         h1 {
-            font-size: 1.8rem;
-            margin-bottom: 20px;
-            color: #d94f6d;
+            color: #333;
         }
-
-        .info-item {
-            margin-bottom: 15px;
-        }
-
-        .info-label {
-            font-size: 1rem;
-            font-weight: bold;
-            color: #555;
-            display: block; /* Garante que o label e o valor fiquem em linhas separadas */
-            margin-bottom: 5px;
-        }
-
-        .info-value {
-            font-size: 1.8rem; /* Tamanho maior para o valor principal */
-            font-weight: bold;
-            color: #000;
-        }
-
-        #statusPedido {
-            font-size: 2.2rem; /* Status é o mais importante */
-            color: #d94f6d; /* Cor destacada para o status */
-            font-weight: bolder;
+        #qrcode {
             margin-top: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-
-        .mensagem-extra {
-            margin-top: 25px;
-            font-size: 0.9rem;
-            color: #777;
-            line-height: 1.4;
+        p {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: #555;
+            text-align: center;
         }
-
-        /* Animação simples para o status */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        #statusPedido {
-            animation: fadeIn 0.5s ease-out;
-        }
-
-        /* Estilo para quando a senha não for encontrada */
-        .erro-senha {
-            color: red;
-            font-size: 1.2rem;
-            font-weight: bold;
+        strong {
+            color: #d94f6d;
         }
     </style>
 </head>
 <body>
-    <div class="logo-loja-container">
-        <img src="103.png" alt="Logo da Loja" />
-        <div class="nome-loja">Vitória Moss Delicatessen</div>
-    </div>
+    <h1>Seu QR Code de Acompanhamento</h1>
+    <p>Escaneie este QR Code para acompanhar o status do seu pedido.</p>
+    
+    <div id="qrcode"></div>
 
-    <div class="conteudo-principal">
-        <h1>Acompanhamento do Seu Pedido</h1>
+    <p>Sua senha/ID do pedido: <strong id="senhaExibida"></strong></p>
 
-        <div class="info-item">
-            <span class="info-label">Sua Senha/ID do Pedido:</span>
-            <span class="info-value" id="senhaExibida">Carregando...</span>
-        </div>
-
-        <div class="info-item">
-            <span class="info-label">Status Atual:</span>
-            <span class="info-value" id="statusPedido">Buscando status...</span>
-        </div>
-
-        <p class="mensagem-extra">
-            Mantenha esta página aberta para atualizações em tempo real.
-            Aguarde a chamada no painel principal da loja.
-        </p>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
-
-        // Configuração do Firebase (a mesma do seu painel)
-        const firebaseConfig = {
-            apiKey: "AIzaSyAPhzF9NHdTioVgR5JfesH51xRjSsfnBlI",
-            authDomain: "sistema-senhas-dabe7.firebaseapp.com",
-            databaseURL: "https://sistema-senhas-dabe7-default-rtdb.firebaseio.com",
-            projectId: "sistema-senhas-dabe7",
-            storageBucket: "sistema-senhas-dabe7.appspot.com",
-            messagingSenderId: "559787868520",
-            appId: "1:559787868520:web:73191afd87078a4c4556dd"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // Função para obter parâmetros da URL
+    <script>
         function getUrlParameter(name) {
             name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
             var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
@@ -157,54 +54,24 @@
             return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
         };
 
-        // Obtenha a senha do pedido da URL
-        const senhaParam = getUrlParameter('senha');
-        const senhaExibidaElement = document.getElementById('senhaExibida');
-        const statusPedidoElement = document.getElementById('statusPedido');
-
-        if (!senhaParam) {
-            senhaExibidaElement.innerText = "N/A";
-            statusPedidoElement.innerText = "Erro: Senha não encontrada na URL.";
-            statusPedidoElement.classList.add('erro-senha');
-            console.error("Senha do pedido não encontrada na URL.");
+        const senhaDoPedido = getUrlParameter('senha'); 
+        
+        if (!senhaDoPedido) {
+            alert("Erro: Senha do pedido não encontrada na URL. Por favor, utilize o link fornecido.");
+            document.body.innerHTML = "<h1>Erro: Senha do pedido não encontrada.</h1><p>Verifique o link ou o QR Code.</p>";
         } else {
-            senhaExibidaElement.innerText = senhaParam;
-
-            // Referência ao status do pedido no Firebase
-            // Lembre-se: 'pedidos_retirada' é a nova estrutura que conversamos
-            const pedidoRef = ref(db, `pedidos_retirada/${senhaParam}/status`);
-
-            // Escutando mudanças no status do pedido em tempo real
-            onValue(pedidoRef, (snapshot) => {
-                const status = snapshot.val();
-                if (status) {
-                    // Mapeamento de status para textos amigáveis
-                    let statusAmigavel = "Desconhecido";
-                    switch (status) {
-                        case "em_preparacao":
-                            statusAmigavel = "Em Preparação ⏳";
-                            break;
-                        case "pronto_para_retirada":
-                            statusAmigavel = "Pronto para Retirada! ✅";
-                            break;
-                        case "aguardando_chamada": // Se você tiver um status específico para "na fila"
-                            statusAmigavel = "Aguardando Chamada no Painel ➡️";
-                            break;
-                        case "atendido":
-                            statusAmigavel = "Pedido Retirado! 👋";
-                            break;
-                        default:
-                            statusAmigavel = status; // Exibe o status como está se não houver mapeamento
-                    }
-                    statusPedidoElement.innerText = statusAmigavel;
-                } else {
-                    statusPedidoElement.innerText = "Pedido não encontrado ou status indefinido.";
-                    statusPedidoElement.classList.add('erro-senha');
-                }
-            }, (error) => {
-                console.error("Erro ao ler status do Firebase:", error);
-                statusPedidoElement.innerText = "Erro ao carregar status.";
-                statusPedidoElement.classList.add('erro-senha');
+            document.getElementById('senhaExibida').innerText = senhaDoPedido;
+            
+            // AQUI ESTÁ A CORREÇÃO DA URL:
+            const urlAcompanhamento = `https://painel-senhas-6vy1-aadn5u7ka-giacominnis-projects.vercel.app/acompanhamento.html?senha=${senhaDoPedido}`;
+            
+            const qrcode = new QRCode(document.getElementById("qrcode"), {
+                text: urlAcompanhamento,
+                width: 256,
+                height: 256,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
             });
         }
     </script>
