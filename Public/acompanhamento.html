@@ -214,7 +214,7 @@
                 if (ultimaSenhaChamada !== null && ultimaSenhaChamada !== senha) {
                     console.log("Detectada nova senha. Tentando vibrar... Senha anterior:", ultimaSenhaChamada, "Nova senha:", senha);
                     if (navigator.vibrate) { // Verifica se a API de vibração é suportada
-                        navigator.vibrate([200]); // Vibra por 200ms
+                        navigator.vibrate([100, 50, 100]); // Vibra 100ms, pausa 50ms, vibra 100ms
                         console.log("Vibração disparada!");
                     } else {
                         console.warn("API de vibração não suportada ou desabilitada no dispositivo/navegador.");
