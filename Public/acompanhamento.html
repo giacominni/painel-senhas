@@ -210,20 +210,24 @@
         onValue(senhaAtualRef, (snapshot) => {
             const senha = snapshot.val();
             if (senha) {
-                // Vibração
+                // Lógica de Vibração
                 if (ultimaSenhaChamada !== null && ultimaSenhaChamada !== senha) {
+                    console.log("Detectada nova senha. Tentando vibrar... Senha anterior:", ultimaSenhaChamada, "Nova senha:", senha);
                     if (navigator.vibrate) { // Verifica se a API de vibração é suportada
                         navigator.vibrate([200]); // Vibra por 200ms
+                        console.log("Vibração disparada!");
+                    } else {
+                        console.warn("API de vibração não suportada ou desabilitada no dispositivo/navegador.");
                     }
                 }
-                ultimaSenhaChamada = senha; // Atualiza a última senha chamada
+                ultimaSenhaChamada = senha; // Atualiza a última senha chamada para a próxima comparação
 
                 senhaAtualDisplayElement.innerText = senha;
                 senhaAtualDisplayElement.classList.remove('erro-message');
             } else {
                 senhaAtualDisplayElement.innerText = "N/A";
                 senhaAtualDisplayElement.classList.add('erro-message');
-                console.warn("Nenhuma senha atual encontrada no Firebase.");
+                console.warn("Nenhuma senha atual encontrada no Firebase (painel/senha está vazio).");
             }
         }, (error) => {
             console.error("Erro ao ler senha atual do Firebase:", error);
@@ -238,14 +242,14 @@
             coluna1.innerHTML = ''; // Limpa as colunas antes de preencher
             coluna2.innerHTML = '';
 
-            // Exibe as últimas 3 senhas (do índice 1 em diante, pois a 0 é a atual)
-            // Limitando a um máximo de 6 no geral, e distribuindo em 2 colunas.
-            lista.slice(1, 7).forEach((senha, i) => { // Pega do segundo item (índice 1) até o 7º item
+            // Exibe as últimas 6 senhas do histórico, distribuindo em 2 colunas.
+            // O slice(1) é para ignorar a senha que está atualmente em destaque (índice 0 do histórico).
+            lista.slice(1, 7).forEach((senha, i) => { 
                 const btn = document.createElement("button");
                 btn.textContent = senha;
-                if (i < 3) { // As primeiras 3 senhas (após a atual) na coluna 1
+                if (i < 3) { // As primeiras 3 senhas do histórico (após a atual) na coluna 1
                     coluna1.appendChild(btn);
-                } else { // As próximas 3 na coluna 2
+                } else { // As próximas 3 (se existirem) na coluna 2
                     coluna2.appendChild(btn);
                 }
             });
